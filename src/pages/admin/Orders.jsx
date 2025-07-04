@@ -53,7 +53,7 @@ export default function Orders() {
   const fetchOrders = async () => {
     try {
       setLoading(true);
-      const response = await axios.get('/orders');
+      const response = await axios.get('/api/orders');
       setOrders(response.data || []);
     } catch (error) {
       console.error('Error fetching orders:', error);
@@ -92,7 +92,7 @@ export default function Orders() {
   const handleSubmit = async (e) => {
     e.preventDefault();
     try {
-      await axios.put(`/orders/${editingOrder.id}`, formData);
+      await axios.put(`/api/orders/${editingOrder.id}`, formData);
       enqueueSnackbar('Cập nhật đơn hàng thành công', { variant: 'success' });
       handleClose();
       fetchOrders();

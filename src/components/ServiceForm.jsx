@@ -108,7 +108,7 @@ export default function ServiceForm({ service, onSubmit, loading }) {
 
   const fetchCategories = async () => {
     try {
-      const response = await axios.get('/categories');
+      const response = await axios.get('/api/categories');
       setCategories(response || []);
     } catch (error) {
       console.error('Error fetching categories:', error);

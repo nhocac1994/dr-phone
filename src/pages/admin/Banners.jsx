@@ -44,7 +44,7 @@ export default function Banners() {
   const fetchBanners = async () => {
     try {
       setLoading(true);
-      const response = await axios.get('/banners');
+      const response = await axios.get('/api/banners');
       setBanners(response.data || []);
     } catch (error) {
       console.error('Error fetching banners:', error);
@@ -101,10 +101,10 @@ export default function Banners() {
     e.preventDefault();
     try {
       if (editingBanner) {
-        await axios.put(`/banners/${editingBanner.id}`, formData);
+        await axios.put(`/api/banners/${editingBanner.id}`, formData);
         enqueueSnackbar('Cập nhật banner thành công', { variant: 'success' });
       } else {
-        await axios.post('/banners', formData);
+        await axios.post('/api/banners', formData);
         enqueueSnackbar('Thêm banner thành công', { variant: 'success' });
       }
       handleClose();
@@ -118,7 +118,7 @@ export default function Banners() {
   const handleDelete = async (id) => {
     if (window.confirm('Bạn có chắc chắn muốn xóa banner này?')) {
       try {
-        await axios.delete(`/banners/${id}`);
+        await axios.delete(`/api/banners/${id}`);
         enqueueSnackbar('Xóa banner thành công', { variant: 'success' });
         fetchBanners();
       } catch (error) {
