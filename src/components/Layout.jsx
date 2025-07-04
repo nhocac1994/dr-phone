@@ -1,141 +1,44 @@
-import { useState } from 'react';
-import { useNavigate } from 'react-router-dom';
-import {
-  AppBar,
-  Box,
-  CssBaseline,
-  Drawer,
-  IconButton,
-  List,
-  ListItem,
-  ListItemIcon,
-  ListItemText,
-  Toolbar,
-  Typography,
-  Button,
-} from '@mui/material';
-import {
-  Menu as MenuIcon,
-  Home as HomeIcon,
-  Build as BuildIcon,
-  ShoppingCart as CartIcon,
-  Person as PersonIcon,
-  ExitToApp as LogoutIcon,
-} from '@mui/icons-material';
-import { useAuth } from '../contexts/AuthContext';
-
-const drawerWidth = 240;
+import React from 'react';
+import { Box, AppBar, Toolbar, Typography, Container } from '@mui/material';
+import { Link } from 'react-router-dom';
 
 export default function Layout({ children }) {
-  const [mobileOpen, setMobileOpen] = useState(false);
-  const { user, logout, isAdmin } = useAuth();
-  const navigate = useNavigate();
-
-  const menuItems = [
-    { text: 'Trang chủ', icon: <HomeIcon />, path: '/' },
-    { text: 'Dịch vụ', icon: <BuildIcon />, path: '/services' },
-    { text: 'Đơn hàng', icon: <CartIcon />, path: '/orders' },
-  ];
-
-  if (isAdmin) {
-    menuItems.push({ text: 'Quản lý', icon: <PersonIcon />, path: '/admin' });
-  }
-
-  const handleDrawerToggle = () => {
-    setMobileOpen(!mobileOpen);
-  };
-
-  const handleLogout = () => {
-    logout();
-    navigate('/login');
-  };
-
-  const drawer = (
-    <div>
-      <Toolbar />
-      <List>
-        {menuItems.map((item) => (
-          <ListItem
-            button
-            key={item.text}
-            onClick={() => {
-              navigate(item.path);
-              setMobileOpen(false);
-            }}
-          >
-            <ListItemIcon>{item.icon}</ListItemIcon>
-            <ListItemText primary={item.text} />
-          </ListItem>
-        ))}
-      </List>
-    </div>
-  );
-
   return (
-    <Box sx={{ display: 'flex' }}>
-      <CssBaseline />
-      <AppBar position="fixed">
+    <Box sx={{ display: 'flex', flexDirection: 'column', minHeight: '100vh' }}>
+      <AppBar position="static">
         <Toolbar>
-          <IconButton
-            color="inherit"
-            edge="start"
-            onClick={handleDrawerToggle}
-            sx={{ mr: 2, display: { sm: 'none' } }}
+          <Typography
+            variant="h6"
+            component={Link}
+            to="/"
+            sx={{ flexGrow: 1, textDecoration: 'none', color: 'inherit' }}
           >
-            <MenuIcon />
-          </IconButton>
-          <Typography variant="h6" noWrap component="div" sx={{ flexGrow: 1 }}>
-            Dr Phone
+            Dr.Phone
           </Typography>
-          {user && (
-            <>
-              <Typography variant="subtitle1" sx={{ mr: 2 }}>
-                {user.username}
-              </Typography>
-              <Button color="inherit" onClick={handleLogout} startIcon={<LogoutIcon />}>
-                Đăng xuất
-              </Button>
-            </>
-          )}
         </Toolbar>
       </AppBar>
+
+      <Container component="main" sx={{ flex: 1, py: 3 }}>
+        {children}
+      </Container>
+
       <Box
-        component="nav"
-        sx={{ width: { sm: drawerWidth }, flexShrink: { sm: 0 } }}
-      >
-        <Drawer
-          variant="temporary"
-          open={mobileOpen}
-          onClose={handleDrawerToggle}
-          ModalProps={{ keepMounted: true }}
-          sx={{
-            display: { xs: 'block', sm: 'none' },
-            '& .MuiDrawer-paper': { boxSizing: 'border-box', width: drawerWidth },
-          }}
-        >
-          {drawer}
-        </Drawer>
-        <Drawer
-          variant="permanent"
-          sx={{
-            display: { xs: 'none', sm: 'block' },
-            '& .MuiDrawer-paper': { boxSizing: 'border-box', width: drawerWidth },
-          }}
-          open
-        >
-          {drawer}
-        </Drawer>
-      </Box>
-      <Box
-        component="main"
+        component="footer"
         sx={{
-          flexGrow: 1,
-          p: 3,
-          width: { sm: `calc(100% - ${drawerWidth}px)` },
+          py: 3,
+          px: 2,
+          mt: 'auto',
+          backgroundColor: (theme) =>
+            theme.palette.mode === 'light'
+              ? theme.palette.grey[200]
+              : theme.palette.grey[800],
         }}
       >
-        <Toolbar />
-        {children}
+        <Container maxWidth="sm">
+          <Typography variant="body1" align="center">
+            © {new Date().getFullYear()} Dr.Phone. Đơn vị sửa chữa điện thoại uy tín.
+          </Typography>
+        </Container>
       </Box>
     </Box>
   );

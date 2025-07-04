@@ -1,34 +1,41 @@
 import axios from 'axios';
 
-const API_URL = import.meta.env.VITE_API_URL || 'http://localhost:8080';
-
-const axiosInstance = axios.create({
-  baseURL: API_URL,
+const instance = axios.create({
+  baseURL: import.meta.env.VITE_API_URL || 'http://localhost:8080/api',
+  timeout: 10000,
   headers: {
     'Content-Type': 'application/json',
-  }
+  },
 });
 
-// Thêm token vào header nếu có
-axiosInstance.interceptors.request.use((config) => {
-  const token = localStorage.getItem('token');
-  if (token) {
-    config.headers.Authorization = `Bearer ${token}`;
-  }
-  return config;
-});
-
-// Xử lý lỗi response
-axiosInstance.interceptors.response.use(
-  (response) => response,
+// Add a request interceptor
+instance.interceptors.request.use(
+  (config) => {
+    const token = localStorage.getItem('token');
+    if (token) {
+      config.headers.Authorization = `Bearer ${token}`;
+    }
+    return config;
+  },
   (error) => {
-    if (error.response?.status === 401) {
-      localStorage.removeItem('token');
-      localStorage.removeItem('user');
-      window.location.href = '/login';
+    return Promise.reject(error);
+  }
+);
+
+// Add a response interceptor
+instance.interceptors.response.use(
+  (response) => response.data,
+  (error) => {
+    if (error.response) {
+      // Nếu token hết hạn hoặc không hợp lệ
+      if (error.response.status === 401) {
+        localStorage.removeItem('token');
+        window.location.href = '/login';
+      }
+      return Promise.reject(error.response.data);
     }
     return Promise.reject(error);
   }
 );
 
-export default axiosInstance; 
+export default instance; 

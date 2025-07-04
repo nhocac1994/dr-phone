@@ -1,89 +1,112 @@
-import { useState } from 'react';
-import { useNavigate, useLocation } from 'react-router-dom';
+import React, { useState } from 'react';
+import { useNavigate } from 'react-router-dom';
 import { useAuth } from '../contexts/AuthContext';
-import { useForm } from 'react-hook-form';
-import { yupResolver } from '@hookform/resolvers/yup';
-import * as yup from 'yup';
 import {
   Container,
-  Paper,
+  Box,
+  Typography,
   TextField,
   Button,
-  Typography,
-  Box,
+  Paper,
   Alert,
 } from '@mui/material';
 
-const schema = yup.object({
-  username: yup.string().required('Vui lòng nhập tên đăng nhập'),
-  password: yup.string().required('Vui lòng nhập mật khẩu'),
-});
-
 export default function Login() {
-  const { login } = useAuth();
-  const navigate = useNavigate();
-  const location = useLocation();
+  const [username, setUsername] = useState('');
+  const [password, setPassword] = useState('');
   const [error, setError] = useState('');
+  const [loading, setLoading] = useState(false);
+  const navigate = useNavigate();
+  const { login } = useAuth();
 
-  const {
-    register,
-    handleSubmit,
-    formState: { errors, isSubmitting },
-  } = useForm({
-    resolver: yupResolver(schema),
-  });
-
-  const onSubmit = async (data) => {
+  const handleSubmit = async (e) => {
+    e.preventDefault();
     try {
       setError('');
-      await login(data.username, data.password);
-      const from = location.state?.from?.pathname || '/';
-      navigate(from, { replace: true });
+      setLoading(true);
+      console.log('Attempting login with:', { username, password });
+      const response = await login(username, password);
+      console.log('Login response:', response);
+      
+      // Kiểm tra role từ response
+      if (response?.user?.role === 'admin') {
+        console.log('Admin login successful, navigating to /admin');
+        navigate('/admin');
+      } else {
+        console.log('Non-admin user:', response?.user);
+        setError('Bạn không có quyền truy cập trang quản trị');
+      }
     } catch (err) {
-      setError(err.message);
+      console.error('Login error:', err);
+      setError(err.message || 'Đăng nhập thất bại');
+    } finally {
+      setLoading(false);
     }
   };
 
   return (
-    <Container maxWidth="sm">
-      <Box sx={{ mt: 8 }}>
-        <Paper elevation={3} sx={{ p: 4 }}>
-          <Typography component="h1" variant="h5" align="center" gutterBottom>
-            Đăng nhập
+    <Container component="main" maxWidth="xs">
+      <Box
+        sx={{
+          marginTop: 8,
+          display: 'flex',
+          flexDirection: 'column',
+          alignItems: 'center',
+        }}
+      >
+        <Paper
+          elevation={3}
+          sx={{
+            p: 4,
+            display: 'flex',
+            flexDirection: 'column',
+            alignItems: 'center',
+            width: '100%',
+          }}
+        >
+          <Typography component="h1" variant="h5">
+            Đăng nhập quản trị
           </Typography>
           {error && (
-            <Alert severity="error" sx={{ mb: 2 }}>
+            <Alert severity="error" sx={{ mt: 2, width: '100%' }}>
               {error}
             </Alert>
           )}
-          <form onSubmit={handleSubmit(onSubmit)}>
+          <Box component="form" onSubmit={handleSubmit} sx={{ mt: 1, width: '100%' }}>
             <TextField
-              {...register('username')}
               margin="normal"
+              required
               fullWidth
+              id="username"
               label="Tên đăng nhập"
-              error={!!errors.username}
-              helperText={errors.username?.message}
+              name="username"
+              autoComplete="username"
+              autoFocus
+              value={username}
+              onChange={(e) => setUsername(e.target.value)}
             />
             <TextField
-              {...register('password')}
               margin="normal"
+              required
               fullWidth
+              name="password"
               label="Mật khẩu"
               type="password"
-              error={!!errors.password}
-              helperText={errors.password?.message}
+              id="password"
+              autoComplete="current-password"
+              value={password}
+              onChange={(e) => setPassword(e.target.value)}
             />
             <Button
               type="submit"
               fullWidth
               variant="contained"
-              sx={{ mt: 3 }}
-              disabled={isSubmitting}
+              sx={{ mt: 3, mb: 2 }}
+              disabled={loading}
             >
-              {isSubmitting ? 'Đang đăng nhập...' : 'Đăng nhập'}
+              {loading ? 'Đang xử lý...' : 'Đăng nhập'}
             </Button>
-          </form>
+          </Box>
         </Paper>
       </Box>
     </Container>
