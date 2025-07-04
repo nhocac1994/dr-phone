@@ -113,7 +113,7 @@ const Services = () => {
 
   const fetchCategories = async () => {
     try {
-      const response = await axios.get('/categories');
+      const response = await axios.get('/api/categories');
       setCategories(response || []);
     } catch (error) {
       console.error('Error fetching categories:', error);
@@ -124,7 +124,7 @@ const Services = () => {
   const fetchServices = async () => {
     try {
       setLoading(true);
-      const response = await axios.get('/services');
+      const response = await axios.get('/api/services');
       setServices(response || []);
     } catch (error) {
       console.error('Error fetching services:', error);
@@ -138,7 +138,7 @@ const Services = () => {
   const handleDelete = async (id) => {
     try {
       setLoading(true);
-      await axios.delete(`/services/${id}`);
+      await axios.delete(`/api/services/${id}`);
       enqueueSnackbar('Xóa dịch vụ thành công', { variant: 'success' });
       fetchServices();
       setOpenConfirm(false);
@@ -155,10 +155,10 @@ const Services = () => {
     try {
       setLoading(true);
       if (selectedService) {
-        await axios.put(`/services/${selectedService.id}`, formData);
+        await axios.put(`/api/services/${selectedService.id}`, formData);
         enqueueSnackbar('Cập nhật dịch vụ thành công', { variant: 'success' });
       } else {
-        await axios.post('/services', formData);
+        await axios.post('/api/services', formData);
         enqueueSnackbar('Thêm dịch vụ thành công', { variant: 'success' });
       }
       setOpenForm(false);

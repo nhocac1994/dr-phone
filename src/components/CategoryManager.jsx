@@ -53,7 +53,7 @@ export default function CategoryManager() {
     try {
       setLoading(true);
       setError(null);
-      const response = await axios.get('/categories');
+      const response = await axios.get('/api/categories');
       console.log('Categories loaded:', response);
       setCategories(response);
     } catch (error) {
@@ -94,13 +94,13 @@ export default function CategoryManager() {
     try {
       if (selectedCategory?.id) {
         await axios.put(
-          `/categories/${selectedCategory.category_id}/sub-categories/${selectedCategory.id}`,
+          `/api/categories/${selectedCategory.category_id}/sub-categories/${selectedCategory.id}`,
           formData
         );
         enqueueSnackbar('Cập nhật danh mục con thành công', { variant: 'success' });
       } else {
         await axios.post(
-          `/categories/${selectedCategory.category_id}/sub-categories`,
+          `/api/categories/${selectedCategory.category_id}/sub-categories`,
           formData
         );
         enqueueSnackbar('Thêm danh mục con thành công', { variant: 'success' });
@@ -123,7 +123,7 @@ export default function CategoryManager() {
     setLoading(true);
 
     try {
-      const response = await axios.post('/categories', categoryFormData);
+      const response = await axios.post('/api/categories', categoryFormData);
       console.log('Category created:', response);
       enqueueSnackbar('Thêm danh mục thành công', { variant: 'success' });
       setOpenCategoryDialog(false);
@@ -143,7 +143,7 @@ export default function CategoryManager() {
 
     try {
       setLoading(true);
-      await axios.delete(`/categories/${categoryId}/sub-categories/${subCategoryId}`);
+      await axios.delete(`/api/categories/${categoryId}/sub-categories/${subCategoryId}`);
       enqueueSnackbar('Xóa danh mục con thành công', { variant: 'success' });
       fetchData();
     } catch (error) {
