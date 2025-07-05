@@ -13,7 +13,7 @@ export const AuthProvider = ({ children }) => {
     const token = localStorage.getItem('token');
     if (token) {
       console.log('Found token, fetching user data');
-      axios.get('/api/auth/me')
+      axios.get('/auth/me')
         .then(data => {
           console.log('User data:', data);
           setUser(data);
@@ -34,7 +34,7 @@ export const AuthProvider = ({ children }) => {
   const login = async (username, password) => {
     try {
       console.log('Sending login request');
-      const response = await axios.post('/api/auth/login', { username, password });
+      const response = await axios.post('/auth/login', { username, password });
       console.log('Login response:', response);
       
       if (response?.token && response?.user) {

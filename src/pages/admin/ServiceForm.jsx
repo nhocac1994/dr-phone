@@ -12,6 +12,7 @@ import {
 import { useSnackbar } from 'notistack';
 import axios from '../../config/axios';
 import ServiceFormComponent from '../../components/ServiceForm';
+import PageTransition from '../../components/PageTransition';
 
 export default function ServiceForm() {
   const navigate = useNavigate();
@@ -68,42 +69,44 @@ export default function ServiceForm() {
   }
 
   return (
-    <Box>
-      <Box sx={{ mb: 3 }}>
-        <Breadcrumbs>
-          <Link
-            component="button"
-            variant="body1"
-            onClick={() => navigate('/admin/services')}
-            sx={{ cursor: 'pointer' }}
-          >
-            Dịch vụ
-          </Link>
-          <Typography color="text.primary">
-            {id ? 'Cập nhật dịch vụ' : 'Thêm dịch vụ mới'}
-          </Typography>
-        </Breadcrumbs>
-      </Box>
-
-      <Paper sx={{ p: 3 }}>
-        <Box sx={{ display: 'flex', justifyContent: 'space-between', mb: 3 }}>
-          <Typography variant="h6">
-            {id ? 'Cập nhật dịch vụ' : 'Thêm dịch vụ mới'}
-          </Typography>
-          <Button
-            variant="outlined"
-            onClick={() => navigate('/admin/services')}
-          >
-            Quay lại
-          </Button>
+    <PageTransition>
+      <Box>
+        <Box sx={{ mb: 3 }}>
+          <Breadcrumbs>
+            <Link
+              component="button"
+              variant="body1"
+              onClick={() => navigate('/admin/services')}
+              sx={{ cursor: 'pointer' }}
+            >
+              Dịch vụ
+            </Link>
+            <Typography color="text.primary">
+              {id ? 'Cập nhật dịch vụ' : 'Thêm dịch vụ mới'}
+            </Typography>
+          </Breadcrumbs>
         </Box>
 
-        <ServiceFormComponent
-          service={service}
-          onSubmit={handleSubmit}
-          loading={loading}
-        />
-      </Paper>
-    </Box>
+        <Paper sx={{ p: 3 }}>
+          <Box sx={{ display: 'flex', justifyContent: 'space-between', mb: 3 }}>
+            <Typography variant="h6">
+              {id ? 'Cập nhật dịch vụ' : 'Thêm dịch vụ mới'}
+            </Typography>
+            <Button
+              variant="outlined"
+              onClick={() => navigate('/admin/services')}
+            >
+              Quay lại
+            </Button>
+          </Box>
+
+          <ServiceFormComponent
+            service={service}
+            onSubmit={handleSubmit}
+            loading={loading}
+          />
+        </Paper>
+      </Box>
+    </PageTransition>
   );
 } 

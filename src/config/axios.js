@@ -4,7 +4,7 @@ import axios from 'axios';
 console.log('API URL:', import.meta.env.VITE_API_URL);
 
 const instance = axios.create({
-  baseURL: import.meta.env.VITE_API_URL || 'http://localhost:8080',
+  baseURL: import.meta.env.VITE_API_URL,
   timeout: 10000,
   headers: {
     'Content-Type': 'application/json',
@@ -16,6 +16,17 @@ instance.interceptors.request.use(
   (config) => {
     // Log request
     console.log('Request:', config.method.toUpperCase(), config.url, config.data);
+    
+    // Chỉ thêm prefix /api nếu URL không bắt đầu bằng http và chưa có /api
+    if (!config.url.startsWith('http') && !config.url.startsWith('/api')) {
+      config.url = `/api${config.url}`;
+    }
+    
+    // Tự động điều chỉnh Content-Type cho FormData
+    if (config.data instanceof FormData) {
+      config.headers['Content-Type'] = 'multipart/form-data';
+      console.log('Detected FormData, setting Content-Type to multipart/form-data');
+    }
     
     const token = localStorage.getItem('token');
     if (token) {

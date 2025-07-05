@@ -14,6 +14,7 @@ import {
   ShoppingCart as OrderIcon,
   People as UserIcon,
 } from '@mui/icons-material';
+import PageTransition from '../../components/PageTransition';
 
 const statCards = [
   {
@@ -42,81 +43,113 @@ const statCards = [
   },
 ];
 
-export default function Dashboard() {
+const Dashboard = () => {
   return (
-    <Box>
-      <Typography variant="h4" gutterBottom>
-        Dashboard
-      </Typography>
-
-      <Grid container spacing={3}>
-        {statCards.map((card) => (
-          <Grid item xs={12} sm={6} md={3} key={card.title}>
+    <PageTransition>
+      <Box>
+        <Typography variant="h5" gutterBottom>
+          Tổng quan
+        </Typography>
+        
+        <Grid container spacing={3}>
+          <Grid item xs={12} md={6} lg={3}>
             <Paper
               sx={{
                 p: 2,
                 display: 'flex',
                 flexDirection: 'column',
                 height: 140,
-                bgcolor: 'white',
-                '&:hover': {
-                  boxShadow: 6,
-                  transform: 'translateY(-4px)',
-                  transition: 'all 0.3s',
-                },
               }}
             >
-              <Box
-                sx={{
-                  display: 'flex',
-                  justifyContent: 'space-between',
-                  alignItems: 'flex-start',
-                }}
-              >
-                <Box>
-                  <Typography color="textSecondary" variant="h6" gutterBottom>
-                    {card.title}
-                  </Typography>
-                  <Typography variant="h4">{card.value}</Typography>
-                </Box>
-                <Box
-                  sx={{
-                    bgcolor: `${card.color}15`,
-                    p: 1,
-                    borderRadius: 2,
-                    color: card.color,
-                  }}
-                >
-                  {card.icon}
-                </Box>
-              </Box>
+              <Typography variant="h6" color="primary">
+                Dịch vụ
+              </Typography>
+              <Typography variant="h4" sx={{ mt: 'auto' }}>
+                0
+              </Typography>
             </Paper>
           </Grid>
-        ))}
-      </Grid>
+          
+          <Grid item xs={12} md={6} lg={3}>
+            <Paper
+              sx={{
+                p: 2,
+                display: 'flex',
+                flexDirection: 'column',
+                height: 140,
+              }}
+            >
+              <Typography variant="h6" color="secondary">
+                Đơn hàng
+              </Typography>
+              <Typography variant="h4" sx={{ mt: 'auto' }}>
+                0
+              </Typography>
+            </Paper>
+          </Grid>
+          
+          <Grid item xs={12} md={6} lg={3}>
+            <Paper
+              sx={{
+                p: 2,
+                display: 'flex',
+                flexDirection: 'column',
+                height: 140,
+              }}
+            >
+              <Typography variant="h6" style={{ color: 'green' }}>
+                Danh mục
+              </Typography>
+              <Typography variant="h4" sx={{ mt: 'auto' }}>
+                0
+              </Typography>
+            </Paper>
+          </Grid>
+          
+          <Grid item xs={12} md={6} lg={3}>
+            <Paper
+              sx={{
+                p: 2,
+                display: 'flex',
+                flexDirection: 'column',
+                height: 140,
+              }}
+            >
+              <Typography variant="h6" style={{ color: 'orange' }}>
+                Banner
+              </Typography>
+              <Typography variant="h4" sx={{ mt: 'auto' }}>
+                0
+              </Typography>
+            </Paper>
+          </Grid>
+        </Grid>
 
-      <Grid container spacing={3} sx={{ mt: 3 }}>
-        <Grid item xs={12} md={6}>
-          <Card>
-            <CardHeader title="Đơn hàng gần đây" />
-            <CardContent>
-              <Typography variant="body2" color="text.secondary">
-                Chưa có đơn hàng nào.
-              </Typography>
-            </CardContent>
-          </Card>
+        <Grid container spacing={3} sx={{ mt: 3 }}>
+          <Grid item xs={12} md={6}>
+            <Card>
+              <CardHeader title="Đơn hàng gần đây" />
+              <CardContent>
+                <Typography variant="body2" color="text.secondary">
+                  Chưa có đơn hàng nào.
+                </Typography>
+              </CardContent>
+            </Card>
+          </Grid>
+          <Grid item xs={12} md={6}>
+            <Card>
+              <CardHeader title="Dịch vụ phổ biến" />
+              <CardContent>
+                <Typography variant="body2" color="text.secondary">
+                  Chưa có dữ liệu thống kê.
+                </Typography>
+              </CardContent>
+            </Card>
+          </Grid>
         </Grid>
-        <Grid item xs={12} md={6}>
-          <Card>
-            <CardHeader title="Dịch vụ phổ biến" />
-            <CardContent>
-              <Typography variant="body2" color="text.secondary">
-                Chưa có dữ liệu thống kê.
-              </Typography>
-            </CardContent>
-          </Card>
-        </Grid>
-      </Grid>
-    </Box>
+      </Box>
+    </PageTransition>
   );
-} 
+};
+
+export default Dashboard; 
