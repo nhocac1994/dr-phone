@@ -40,7 +40,11 @@ import {
   ListItemText,
   Slide,
   useMediaQuery,
-  useTheme
+  useTheme,
+  Grid,
+  Avatar,
+  Divider,
+  CardActions
 } from '@mui/material';
 import { LoadingButton } from '@mui/lab';
 import {
@@ -53,7 +57,9 @@ import {
   Search as SearchIcon,
   FilterList as FilterListIcon,
   Close as CloseIcon,
-  ArrowBack as ArrowBackIcon
+  ArrowBack as ArrowBackIcon,
+  Phone as PhoneIcon,
+  Settings as SettingsIcon
 } from '@mui/icons-material';
 import { useSnackbar } from 'notistack';
 import axios from '../../config/axios';
@@ -230,6 +236,88 @@ const Services = () => {
     setOpenConfirm(true);
   };
 
+  const ServiceCard = ({ service }) => (
+    <Card
+      sx={{
+        cursor: 'pointer',
+        transition: 'all 0.2s ease-in-out',
+        '&:hover': {
+          transform: 'translateY(-2px)',
+          boxShadow: '0 8px 25px rgba(0,0,0,0.15)'
+        },
+        borderRadius: 2,
+        mb: 1
+      }}
+      onClick={() => handleRowClick(service)}
+    >
+      <CardContent sx={{ p: 2 }}>
+        <Box sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', mb: 1 }}>
+          <Box sx={{ flex: 1 }}>
+            <Typography 
+              variant="h6" 
+              sx={{ 
+                fontSize: '1rem', 
+                fontWeight: 600, 
+                mb: 0.5,
+                lineHeight: 1.3
+              }}
+            >
+              {service.name}
+            </Typography>
+            <Typography 
+              variant="body2" 
+              color="text.secondary"
+              sx={{ mb: 1 }}
+            >
+              {service.category_name}
+            </Typography>
+          </Box>
+          <Box sx={{ display: 'flex', gap: 0.5 }}>
+            <IconButton
+              size="small"
+              onClick={(e) => handleEditClick(e, service)}
+              sx={{ 
+                p: 0.5,
+                '&:hover': { backgroundColor: 'primary.light' }
+              }}
+            >
+              <EditIcon sx={{ fontSize: '1rem' }} />
+            </IconButton>
+            <IconButton
+              size="small"
+              color="error"
+              onClick={(e) => handleDeleteClick(e, service)}
+              sx={{ 
+                p: 0.5,
+                '&:hover': { backgroundColor: 'error.light' }
+              }}
+            >
+              <DeleteIcon sx={{ fontSize: '1rem' }} />
+            </IconButton>
+          </Box>
+        </Box>
+        
+        <Box sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+          <Box sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
+            <PhoneIcon sx={{ fontSize: '0.875rem', color: 'text.secondary' }} />
+            <Typography variant="body2" color="text.secondary">
+              {service.sub_category_name || 'Tất cả model'}
+            </Typography>
+          </Box>
+          <Chip
+            label={`${service.spare_parts?.length || 0} linh kiện`}
+            size="small"
+            variant="outlined"
+            sx={{ 
+              fontSize: '0.75rem',
+              height: '20px'
+            }}
+          />
+        </Box>
+      </CardContent>
+    </Card>
+  );
+
   return (
     <PageTransition>
       <Box>
@@ -357,71 +445,86 @@ const Services = () => {
                 ) : displayedServices.length === 0 ? (
                   <Alert severity="info">Không tìm thấy dịch vụ nào</Alert>
                 ) : (
-                  <TableContainer component={Paper} variant="outlined">
-                    <Table>
-                      <TableHead>
-                        <TableRow>
-                          <TableCell>Tên dịch vụ</TableCell>
-                          <TableCell>Danh mục</TableCell>
-                          <TableCell>Model</TableCell>
-                          <TableCell align="right">Linh kiện</TableCell>
-                          <TableCell align="center">Thao tác</TableCell>
-                        </TableRow>
-                      </TableHead>
-                      <TableBody>
+                  <>
+                    {/* Mobile Card View */}
+                    {isMobile ? (
+                      <Box sx={{ pb: 2 }}>
                         {displayedServices.map((service) => (
-                          <TableRow 
-                            key={service.id}
-                            hover
-                            onClick={() => handleRowClick(service)}
-                            sx={{ cursor: 'pointer' }}
-                          >
-                            <TableCell component="th" scope="row">
-                              {service.name}
-                            </TableCell>
-                            <TableCell>{service.category_name}</TableCell>
-                            <TableCell>{service.sub_category_name || '-'}</TableCell>
-                            <TableCell align="right">
-                              {service.spare_parts?.length || 0}
-                            </TableCell>
-                            <TableCell align="center">
-                              <IconButton
-                                size="small"
-                                onClick={(e) => handleEditClick(e, service)}
-                              >
-                                <EditIcon fontSize="small" />
-                              </IconButton>
-                              <IconButton
-                                size="small"
-                                color="error"
-                                onClick={(e) => handleDeleteClick(e, service)}
-                              >
-                                <DeleteIcon fontSize="small" />
-                              </IconButton>
-                            </TableCell>
-                          </TableRow>
+                          <ServiceCard key={service.id} service={service} />
                         ))}
-                        {displayedServices.length === 0 && (
-                          <TableRow>
-                            <TableCell colSpan={5} align="center">
-                              Không có dịch vụ nào
-                            </TableCell>
-                          </TableRow>
-                        )}
-                      </TableBody>
-                    </Table>
-                  </TableContainer>
+                      </Box>
+                    ) : (
+                      /* Desktop Table View */
+                      <TableContainer component={Paper} variant="outlined">
+                        <Table>
+                          <TableHead>
+                            <TableRow>
+                              <TableCell>Tên dịch vụ</TableCell>
+                              <TableCell>Danh mục</TableCell>
+                              <TableCell>Model</TableCell>
+                              <TableCell align="right">Linh kiện</TableCell>
+                              <TableCell align="center">Thao tác</TableCell>
+                            </TableRow>
+                          </TableHead>
+                          <TableBody>
+                            {displayedServices.map((service) => (
+                              <TableRow 
+                                key={service.id}
+                                hover
+                                onClick={() => handleRowClick(service)}
+                                sx={{ cursor: 'pointer' }}
+                              >
+                                <TableCell component="th" scope="row">
+                                  {service.name}
+                                </TableCell>
+                                <TableCell>{service.category_name}</TableCell>
+                                <TableCell>{service.sub_category_name || '-'}</TableCell>
+                                <TableCell align="right">
+                                  {service.spare_parts?.length || 0}
+                                </TableCell>
+                                <TableCell align="center">
+                                  <IconButton
+                                    size="small"
+                                    onClick={(e) => handleEditClick(e, service)}
+                                  >
+                                    <EditIcon fontSize="small" />
+                                  </IconButton>
+                                  <IconButton
+                                    size="small"
+                                    color="error"
+                                    onClick={(e) => handleDeleteClick(e, service)}
+                                  >
+                                    <DeleteIcon fontSize="small" />
+                                  </IconButton>
+                                </TableCell>
+                              </TableRow>
+                            ))}
+                            {displayedServices.length === 0 && (
+                              <TableRow>
+                                <TableCell colSpan={5} align="center">
+                                  Không có dịch vụ nào
+                                </TableCell>
+                              </TableRow>
+                            )}
+                          </TableBody>
+                        </Table>
+                      </TableContainer>
+                    )}
+                  </>
                 )}
 
-                <TablePagination
-                  component="div"
-                  count={filteredServices.length}
-                  page={page}
-                  onPageChange={handleChangePage}
-                  rowsPerPage={rowsPerPage}
-                  onRowsPerPageChange={handleChangeRowsPerPage}
-                  labelRowsPerPage="Hiển thị"
-                />
+                {/* Pagination - Only show on desktop */}
+                {!isMobile && (
+                  <TablePagination
+                    component="div"
+                    count={filteredServices.length}
+                    page={page}
+                    onPageChange={handleChangePage}
+                    rowsPerPage={rowsPerPage}
+                    onRowsPerPageChange={handleChangeRowsPerPage}
+                    labelRowsPerPage="Hiển thị"
+                  />
+                )}
               </motion.div>
             ) : (
               <motion.div

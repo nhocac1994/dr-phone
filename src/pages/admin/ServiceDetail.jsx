@@ -20,7 +20,10 @@ import {
   Card,
   CardMedia,
   Stack,
-  IconButton
+  IconButton,
+  CardContent,
+  useTheme,
+  useMediaQuery
 } from '@mui/material';
 import {
   Edit as EditIcon,
@@ -41,6 +44,8 @@ export default function ServiceDetail() {
   const { enqueueSnackbar } = useSnackbar();
   const [openConfirm, setOpenConfirm] = useState(false);
   const API_URL = import.meta.env.VITE_API_URL || 'http://localhost:8080';
+  const theme = useTheme();
+  const isMobile = useMediaQuery(theme.breakpoints.down('md'));
 
   useEffect(() => {
     if (id) {
@@ -51,7 +56,7 @@ export default function ServiceDetail() {
   const fetchService = async () => {
     try {
       setLoading(true);
-      const response = await axios.get(`/services/${id}`);
+      const response = await axios.get(`/api/services/${id}`);
       setService(response);
     } catch (error) {
       console.error('Error fetching service:', error);
@@ -92,7 +97,7 @@ export default function ServiceDetail() {
   return (
     <PageTransition>
       <Box>
-        <Box sx={{ mb: 3 }}>
+        <Box sx={{ mb: isMobile ? 2 : 3, display: { xs: 'none', md: 'block' } }}>
           <Breadcrumbs>
             <Link
               component="button"
@@ -108,17 +113,17 @@ export default function ServiceDetail() {
           </Breadcrumbs>
         </Box>
 
-        <Paper sx={{ p: 3 }}>
-          <Box sx={{ display: 'flex', justifyContent: 'space-between', mb: 3, alignItems: 'center' }}>
+        <Paper sx={{ p: isMobile ? 1.5 : 3 }}>
+          <Box sx={{ display: 'flex', justifyContent: 'space-between', mb: isMobile ? 2 : 3, alignItems: 'center' }}>
             <Box sx={{ display: 'flex', alignItems: 'center' }}>
               <IconButton
                 size="small"
-                sx={{ mr: 1 }}
+                sx={{ mr: 1, fontSize: isMobile ? '0.75rem' : undefined }}
                 onClick={() => navigate('/admin/services')}
               >
-                <ArrowBackIcon />
+                <ArrowBackIcon sx={{ fontSize: isMobile ? '1.2rem' : undefined }}/>
               </IconButton>
-              <Typography variant="h6">
+              <Typography variant={isMobile ? 'subtitle1' : 'h6'} sx={{ fontWeight: 600, fontSize: isMobile ? '0.75rem' : undefined }}>
                 Chi tiết dịch vụ
               </Typography>
             </Box>
@@ -128,7 +133,7 @@ export default function ServiceDetail() {
                 color="primary"
                 startIcon={<EditIcon />}
                 onClick={handleEdit}
-                sx={{ mr: 1 }}
+                sx={{ mr: 1, fontSize: isMobile ? '0.75rem' : undefined, py: isMobile ? 0.5 : undefined }}
               >
                 Chỉnh sửa
               </Button>
@@ -137,15 +142,16 @@ export default function ServiceDetail() {
                 color="error"
                 startIcon={<DeleteIcon />}
                 onClick={() => setOpenConfirm(true)}
+                sx={{ fontSize: isMobile ? '0.75rem' : undefined, py: isMobile ? 0.5 : undefined }}
               >
                 Xóa
               </Button>
             </Box>
           </Box>
 
-          <Grid container spacing={3}>
+          <Grid container spacing={isMobile ? 2 : 3} direction={isMobile ? 'column-reverse' : 'row'}>
             <Grid item xs={12} md={8}>
-              <Typography variant="h5" gutterBottom>
+              <Typography variant={isMobile ? 'h6' : 'h5'} gutterBottom>
                 {service.name}
               </Typography>
               <Box sx={{ mb: 2 }}>
@@ -188,6 +194,7 @@ export default function ServiceDetail() {
                       border: '1px solid',
                       borderColor: 'divider',
                       borderRadius: 1,
+                      fontSize: isMobile ? '1rem' : undefined,
                       '& img': {
                         maxWidth: '100%',
                         height: 'auto'
@@ -198,46 +205,67 @@ export default function ServiceDetail() {
                 </Box>
               )}
 
-              <Divider sx={{ my: 3 }} />
+              <Divider sx={{ my: isMobile ? 2 : 3 }} />
 
-              <Typography variant="h6" gutterBottom>
+              <Typography variant={isMobile ? 'subtitle1' : 'h6'} gutterBottom>
                 Danh sách linh kiện
               </Typography>
               
               {service.spare_parts && service.spare_parts.length > 0 ? (
-                <TableContainer component={Paper} variant="outlined">
-                  <Table>
-                    <TableHead>
-                      <TableRow>
-                        <TableCell>Tên linh kiện</TableCell>
-                        <TableCell align="right">Giá gốc</TableCell>
-                        <TableCell align="right">Giảm giá</TableCell>
-                        <TableCell align="right">Giá cuối</TableCell>
-                        <TableCell>Bảo hành</TableCell>
-                        <TableCell>Thời gian sửa</TableCell>
-                      </TableRow>
-                    </TableHead>
-                    <TableBody>
-                      {service.spare_parts.map((part) => (
-                        <TableRow key={part.id}>
-                          <TableCell component="th" scope="row">
-                            {part.name}
-                            {part.description && (
-                              <Typography variant="caption" display="block" color="text.secondary">
-                                {part.description}
-                              </Typography>
-                            )}
-                          </TableCell>
-                          <TableCell align="right">{formatCurrency(part.original_price)}</TableCell>
-                          <TableCell align="right">{part.discount_percent}%</TableCell>
-                          <TableCell align="right">{formatCurrency(part.final_price)}</TableCell>
-                          <TableCell>{part.warranty || '-'}</TableCell>
-                          <TableCell>{part.repair_time || '-'}</TableCell>
+                isMobile ? (
+                  <Stack spacing={2}>
+                    {service.spare_parts.map((part) => (
+                      <Card key={part.id} variant="outlined" sx={{ borderRadius: 2 }}>
+                        <CardContent>
+                          <Typography fontWeight={600} fontSize="1rem">{part.name}</Typography>
+                          {part.description && (
+                            <Typography variant="caption" color="text.secondary">{part.description}</Typography>
+                          )}
+                          <Divider sx={{ my: 1 }} />
+                          <Typography variant="body2">Giá gốc: {formatCurrency(part.original_price)}</Typography>
+                          <Typography variant="body2">Giảm giá: {part.discount_percent}%</Typography>
+                          <Typography variant="body2">Giá cuối: {formatCurrency(part.final_price)}</Typography>
+                          <Typography variant="body2">Bảo hành: {part.warranty || '-'}</Typography>
+                          <Typography variant="body2">Thời gian sửa: {part.repair_time || '-'}</Typography>
+                        </CardContent>
+                      </Card>
+                    ))}
+                  </Stack>
+                ) : (
+                  <TableContainer component={Paper} variant="outlined">
+                    <Table>
+                      <TableHead>
+                        <TableRow>
+                          <TableCell>Tên linh kiện</TableCell>
+                          <TableCell align="right">Giá gốc</TableCell>
+                          <TableCell align="right">Giảm giá</TableCell>
+                          <TableCell align="right">Giá cuối</TableCell>
+                          <TableCell>Bảo hành</TableCell>
+                          <TableCell>Thời gian sửa</TableCell>
                         </TableRow>
-                      ))}
-                    </TableBody>
-                  </Table>
-                </TableContainer>
+                      </TableHead>
+                      <TableBody>
+                        {service.spare_parts.map((part) => (
+                          <TableRow key={part.id}>
+                            <TableCell component="th" scope="row">
+                              {part.name}
+                              {part.description && (
+                                <Typography variant="caption" display="block" color="text.secondary">
+                                  {part.description}
+                                </Typography>
+                              )}
+                            </TableCell>
+                            <TableCell align="right">{formatCurrency(part.original_price)}</TableCell>
+                            <TableCell align="right">{part.discount_percent}%</TableCell>
+                            <TableCell align="right">{formatCurrency(part.final_price)}</TableCell>
+                            <TableCell>{part.warranty || '-'}</TableCell>
+                            <TableCell>{part.repair_time || '-'}</TableCell>
+                          </TableRow>
+                        ))}
+                      </TableBody>
+                    </Table>
+                  </TableContainer>
+                )
               ) : (
                 <Typography variant="body2" color="text.secondary">
                   Không có linh kiện nào
@@ -246,7 +274,7 @@ export default function ServiceDetail() {
             </Grid>
 
             <Grid item xs={12} md={4}>
-              <Typography variant="subtitle1" gutterBottom>
+              <Typography variant={isMobile ? 'subtitle1' : 'h6'} gutterBottom>
                 Hình ảnh
               </Typography>
               <Stack spacing={2}>
@@ -255,7 +283,7 @@ export default function ServiceDetail() {
                     <Card key={index} variant="outlined">
                       <CardMedia
                         component="img"
-                        height="200"
+                        height={isMobile ? 140 : 200}
                         image={img.startsWith('http') ? img : `${API_URL}/img/${img}`}
                         alt={`${service.name} - Ảnh ${index + 1}`}
                         sx={{ objectFit: 'contain' }}
@@ -267,7 +295,7 @@ export default function ServiceDetail() {
                     </Card>
                   ))
                 ) : (
-                  <Card variant="outlined" sx={{ height: 200, display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
+                  <Card variant="outlined" sx={{ height: isMobile ? 140 : 200, display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
                     <Typography variant="body2" color="text.secondary">
                       Không có hình ảnh
                     </Typography>
@@ -275,11 +303,11 @@ export default function ServiceDetail() {
                 )}
               </Stack>
 
-              <Box sx={{ mt: 3 }}>
-                <Typography variant="subtitle1" gutterBottom>
+              <Box sx={{ mt: isMobile ? 2 : 3 }}>
+                <Typography variant={isMobile ? 'subtitle2' : 'subtitle1'} gutterBottom>
                   Thông tin khuyến mãi
                 </Typography>
-                <Paper variant="outlined" sx={{ p: 2 }}>
+                <Paper variant="outlined" sx={{ p: isMobile ? 1.5 : 2 }}>
                   {service.vip_discount > 0 && (
                     <Box sx={{ mb: 1 }}>
                       <Typography variant="body2">
