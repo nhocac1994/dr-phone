@@ -28,6 +28,7 @@ import ServiceDetail from './pages/admin/ServiceDetail';
 import Orders from './pages/admin/Orders';
 import Categories from './pages/admin/Categories';
 import Banners from './pages/admin/Banners';
+import SiteSettings from './pages/admin/SiteSettings';
 
 // Wrapper component để sử dụng useLocation
 const AnimatedRoutes = () => {
@@ -51,6 +52,7 @@ const AnimatedRoutes = () => {
           <Route path="orders" element={<Orders />} />
           <Route path="categories" element={<Categories />} />
           <Route path="banners" element={<Banners />} />
+          <Route path="settings" element={<SiteSettings />} />
         </Route>
 
         {/* Catch all route */}
