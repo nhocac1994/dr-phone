@@ -21,18 +21,37 @@ import {
   Select,
   MenuItem,
   FormControl,
-  InputLabel
+  InputLabel,
+  Chip,
+  Card,
+  CardContent,
+  Stack,
+  useTheme,
+  useMediaQuery,
+  Alert,
+  Badge
 } from '@mui/material';
-import { Edit as EditIcon } from '@mui/icons-material';
+import { 
+  Edit as EditIcon,
+  CheckCircle as CheckCircleIcon,
+  Cancel as CancelIcon,
+  Phone as PhoneIcon,
+  Email as EmailIcon,
+  Schedule as ScheduleIcon,
+  Notes as NotesIcon
+} from '@mui/icons-material';
+import { LoadingButton } from '@mui/lab';
 import { useSnackbar } from 'notistack';
 import axios from '../../config/axios';
+import { useNotification } from '../../contexts/NotificationContext';
+import PageTransition from '../../components/PageTransition';
 
 const ORDER_STATUS = {
-  pending: 'Chờ xử lý',
-  confirmed: 'Đã xác nhận',
-  processing: 'Đang xử lý',
-  completed: 'Hoàn thành',
-  cancelled: 'Đã hủy'
+  pending: { label: 'Chờ xử lý', color: 'warning' },
+  confirmed: { label: 'Đã xác nhận', color: 'info' },
+  processing: { label: 'Đang xử lý', color: 'primary' },
+  completed: { label: 'Hoàn thành', color: 'success' },
+  cancelled: { label: 'Đã hủy', color: 'error' }
 };
 
 export default function Orders() {
@@ -45,6 +64,9 @@ export default function Orders() {
     notes: ''
   });
   const { enqueueSnackbar } = useSnackbar();
+  const { fetchNotificationCount } = useNotification();
+  const theme = useTheme();
+  const isMobile = useMediaQuery(theme.breakpoints.down('md'));
 
   useEffect(() => {
     fetchOrders();
@@ -54,7 +76,8 @@ export default function Orders() {
     try {
       setLoading(true);
       const response = await axios.get('/api/orders');
-      setOrders(response.data || []);
+      setOrders(response || []);
+      // Không gọi fetchNotificationCount ở đây để tránh vòng lặp
     } catch (error) {
       console.error('Error fetching orders:', error);
       enqueueSnackbar('Lỗi khi tải danh sách đơn hàng', { variant: 'error' });
@@ -96,9 +119,26 @@ export default function Orders() {
       enqueueSnackbar('Cập nhật đơn hàng thành công', { variant: 'success' });
       handleClose();
       fetchOrders();
+      // Chỉ cập nhật notification count khi thay đổi trạng thái
+      if (formData.status !== editingOrder.status) {
+        fetchNotificationCount();
+      }
     } catch (error) {
       console.error('Error updating order:', error);
       enqueueSnackbar('Lỗi khi cập nhật đơn hàng', { variant: 'error' });
+    }
+  };
+
+  const handleQuickAction = async (orderId, newStatus) => {
+    try {
+      await axios.put(`/api/orders/${orderId}`, { status: newStatus });
+      enqueueSnackbar(`Đã ${ORDER_STATUS[newStatus].label.toLowerCase()} đơn hàng`, { variant: 'success' });
+      fetchOrders();
+      // Chỉ cập nhật notification count khi thay đổi trạng thái
+      fetchNotificationCount();
+    } catch (error) {
+      console.error('Error updating order status:', error);
+      enqueueSnackbar('Lỗi khi cập nhật trạng thái', { variant: 'error' });
     }
   };
 
@@ -106,60 +146,234 @@ export default function Orders() {
     return new Date(dateString).toLocaleString('vi-VN');
   };
 
-  return (
-    <Box p={3}>
-      <Typography variant="h4" mb={3}>
-        Quản lý Đơn hàng
-      </Typography>
+  const formatPrice = (price) => {
+    return price ? `${price.toLocaleString('vi-VN')}₫` : 'Chưa có giá';
+  };
 
-      <TableContainer component={Paper}>
-        <Table>
-          <TableHead>
-            <TableRow>
-              <TableCell>Mã đơn</TableCell>
-              <TableCell>Khách hàng</TableCell>
-              <TableCell>Điện thoại</TableCell>
-              <TableCell>Dịch vụ</TableCell>
-              <TableCell>Thời gian đặt</TableCell>
-              <TableCell>Trạng thái</TableCell>
-              <TableCell>Ghi chú</TableCell>
-              <TableCell align="right">Thao tác</TableCell>
-            </TableRow>
-          </TableHead>
-          <TableBody>
-            {loading ? (
+  const OrderCard = ({ order }) => (
+    <Card sx={{ mb: 2 }}>
+      <CardContent>
+        <Box sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', mb: 2 }}>
+          <Box>
+            <Typography variant="h6" component="h3">
+              #{order.id} - {order.customer_name}
+            </Typography>
+            <Typography variant="body2" color="text.secondary">
+              {order.service_name}
+            </Typography>
+          </Box>
+          <Chip 
+            label={ORDER_STATUS[order.status]?.label}
+            color={ORDER_STATUS[order.status]?.color}
+            size="small"
+          />
+        </Box>
+
+        <Stack spacing={1} sx={{ mb: 2 }}>
+          <Box sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
+            <PhoneIcon fontSize="small" color="action" />
+            <Typography variant="body2">{order.customer_phone}</Typography>
+          </Box>
+          {order.customer_email && (
+            <Box sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
+              <EmailIcon fontSize="small" color="action" />
+              <Typography variant="body2">{order.customer_email}</Typography>
+            </Box>
+          )}
+          {order.scheduled_time && (
+            <Box sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
+              <ScheduleIcon fontSize="small" color="action" />
+              <Typography variant="body2">{formatDate(order.scheduled_time)}</Typography>
+            </Box>
+          )}
+          {order.notes && (
+            <Box sx={{ display: 'flex', alignItems: 'flex-start', gap: 1 }}>
+              <NotesIcon fontSize="small" color="action" sx={{ mt: 0.5 }} />
+              <Typography variant="body2">{order.notes}</Typography>
+            </Box>
+          )}
+        </Stack>
+
+        <Box sx={{ display: 'flex', gap: 1, flexWrap: 'wrap' }}>
+          <Button
+            size="small"
+            variant="outlined"
+            startIcon={<EditIcon />}
+            onClick={() => handleOpen(order)}
+          >
+            Chỉnh sửa
+          </Button>
+          {order.status === 'pending' && (
+            <>
+              <Button
+                size="small"
+                variant="contained"
+                color="success"
+                startIcon={<CheckCircleIcon />}
+                onClick={() => handleQuickAction(order.id, 'confirmed')}
+              >
+                Xác nhận
+              </Button>
+              <Button
+                size="small"
+                variant="contained"
+                color="error"
+                startIcon={<CancelIcon />}
+                onClick={() => handleQuickAction(order.id, 'cancelled')}
+              >
+                Từ chối
+              </Button>
+            </>
+          )}
+          {order.status === 'confirmed' && (
+            <Button
+              size="small"
+              variant="contained"
+              color="primary"
+              onClick={() => handleQuickAction(order.id, 'processing')}
+            >
+              Bắt đầu sửa
+            </Button>
+          )}
+          {order.status === 'processing' && (
+            <Button
+              size="small"
+              variant="contained"
+              color="success"
+              onClick={() => handleQuickAction(order.id, 'completed')}
+            >
+              Hoàn thành
+            </Button>
+          )}
+        </Box>
+      </CardContent>
+    </Card>
+  );
+
+  return (
+    <PageTransition>
+      <Box p={3}>
+      
+      <Box sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', mb: 3 }}>
+        <Typography variant="h4">
+          Quản lý Đơn hàng
+        </Typography>
+        <Badge badgeContent={orders.filter(o => o.status === 'pending').length} color="warning">
+          <Chip 
+            label={`${orders.filter(o => o.status === 'pending').length} đơn chờ xử lý`}
+            color="warning"
+            variant="outlined"
+          />
+        </Badge>
+      </Box>
+
+      {loading ? (
+        <Box display="flex" justifyContent="center" p={3}>
+          <CircularProgress />
+        </Box>
+      ) : !orders || orders.length === 0 ? (
+        <Alert severity="info">Chưa có đơn hàng nào</Alert>
+      ) : isMobile ? (
+        // Mobile view - Card layout
+        <Stack spacing={2}>
+          {orders.map((order) => (
+            <OrderCard key={order.id} order={order} />
+          ))}
+        </Stack>
+      ) : (
+        // Desktop view - Table layout
+        <TableContainer component={Paper}>
+          <Table>
+            <TableHead>
               <TableRow>
-                <TableCell colSpan={8} align="center">
-                  <CircularProgress />
-                </TableCell>
+                <TableCell>Mã đơn</TableCell>
+                <TableCell>Khách hàng</TableCell>
+                <TableCell>Liên hệ</TableCell>
+                <TableCell>Dịch vụ</TableCell>
+                <TableCell>Thời gian đặt</TableCell>
+                <TableCell>Trạng thái</TableCell>
+                <TableCell>Ghi chú</TableCell>
+                <TableCell align="center">Thao tác</TableCell>
               </TableRow>
-            ) : orders.length === 0 ? (
-              <TableRow>
-                <TableCell colSpan={8} align="center">
-                  Chưa có đơn hàng nào
-                </TableCell>
-              </TableRow>
-            ) : (
-              orders.map((order) => (
+            </TableHead>
+            <TableBody>
+              {orders.map((order) => (
                 <TableRow key={order.id}>
                   <TableCell>#{order.id}</TableCell>
-                  <TableCell>{order.customer_name}</TableCell>
-                  <TableCell>{order.customer_phone}</TableCell>
-                  <TableCell>{order.service_name}</TableCell>
-                  <TableCell>{formatDate(order.created_at)}</TableCell>
-                  <TableCell>{ORDER_STATUS[order.status]}</TableCell>
-                  <TableCell>{order.notes}</TableCell>
-                  <TableCell align="right">
-                    <IconButton onClick={() => handleOpen(order)} color="primary">
-                      <EditIcon />
-                    </IconButton>
+                  <TableCell>
+                    <Typography variant="subtitle2">{order.customer_name}</Typography>
+                  </TableCell>
+                  <TableCell>
+                    <Typography variant="body2">{order.customer_phone}</Typography>
+                    {order.customer_email && (
+                      <Typography variant="body2" color="text.secondary">
+                        {order.customer_email}
+                      </Typography>
+                    )}
+                  </TableCell>
+                  <TableCell>
+                    <Typography variant="body2">{order.service_name}</Typography>
+                    <Typography variant="body2" color="text.secondary">
+                      {formatPrice(order.service_price)}
+                    </Typography>
+                  </TableCell>
+                  <TableCell>
+                    <Typography variant="body2">{formatDate(order.created_at)}</Typography>
+                    {order.scheduled_time && (
+                      <Typography variant="body2" color="text.secondary">
+                        Hẹn: {formatDate(order.scheduled_time)}
+                      </Typography>
+                    )}
+                  </TableCell>
+                  <TableCell>
+                    <Chip 
+                      label={ORDER_STATUS[order.status]?.label}
+                      color={ORDER_STATUS[order.status]?.color}
+                      size="small"
+                    />
+                  </TableCell>
+                  <TableCell>
+                    {order.notes ? (
+                      <Typography variant="body2" sx={{ maxWidth: 200, overflow: 'hidden', textOverflow: 'ellipsis' }}>
+                        {order.notes}
+                      </Typography>
+                    ) : (
+                      <Typography variant="body2" color="text.secondary">
+                        Không có
+                      </Typography>
+                    )}
+                  </TableCell>
+                  <TableCell align="center">
+                    <Box sx={{ display: 'flex', gap: 0.5, justifyContent: 'center' }}>
+                      <IconButton onClick={() => handleOpen(order)} color="primary" size="small">
+                        <EditIcon />
+                      </IconButton>
+                      {order.status === 'pending' && (
+                        <>
+                          <IconButton 
+                            onClick={() => handleQuickAction(order.id, 'confirmed')} 
+                            color="success" 
+                            size="small"
+                          >
+                            <CheckCircleIcon />
+                          </IconButton>
+                          <IconButton 
+                            onClick={() => handleQuickAction(order.id, 'cancelled')} 
+                            color="error" 
+                            size="small"
+                          >
+                            <CancelIcon />
+                          </IconButton>
+                        </>
+                      )}
+                    </Box>
                   </TableCell>
                 </TableRow>
-              ))
-            )}
-          </TableBody>
-        </Table>
-      </TableContainer>
+              ))}
+            </TableBody>
+          </Table>
+        </TableContainer>
+      )}
 
       <Dialog open={open} onClose={handleClose} maxWidth="sm" fullWidth>
         <DialogTitle>Cập nhật Đơn hàng #{editingOrder?.id}</DialogTitle>
@@ -175,9 +389,9 @@ export default function Orders() {
                     onChange={handleChange}
                     label="Trạng thái"
                   >
-                    {Object.entries(ORDER_STATUS).map(([value, label]) => (
+                    {Object.entries(ORDER_STATUS).map(([value, config]) => (
                       <MenuItem key={value} value={value}>
-                        {label}
+                        {config.label}
                       </MenuItem>
                     ))}
                   </Select>
@@ -192,18 +406,20 @@ export default function Orders() {
                   fullWidth
                   value={formData.notes}
                   onChange={handleChange}
+                  placeholder="Ghi chú về đơn hàng, tình trạng sửa chữa..."
                 />
               </Grid>
             </Grid>
           </DialogContent>
           <DialogActions>
             <Button onClick={handleClose}>Hủy</Button>
-            <Button type="submit" variant="contained" color="primary">
+            <LoadingButton type="submit" variant="contained" color="primary">
               Cập nhật
-            </Button>
+            </LoadingButton>
           </DialogActions>
         </form>
       </Dialog>
-    </Box>
+      </Box>
+    </PageTransition>
   );
 } 

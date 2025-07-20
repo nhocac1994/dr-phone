@@ -1,5 +1,5 @@
 import React from 'react';
-import { Box, AppBar, Toolbar, Typography, Container } from '@mui/material';
+import { Box, AppBar, Toolbar, Typography, Container, Button } from '@mui/material';
 import { Link } from 'react-router-dom';
 
 export default function Layout({ children }) {
@@ -15,6 +15,14 @@ export default function Layout({ children }) {
           >
             Dr.Phone
           </Typography>
+          <Button
+            color="inherit"
+            component={Link}
+            to="/booking"
+            sx={{ mr: 2 }}
+          >
+            Đặt lịch
+          </Button>
         </Toolbar>
       </AppBar>
 

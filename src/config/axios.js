@@ -17,20 +17,20 @@ const instance = axios.create({
 // Add a request interceptor
 instance.interceptors.request.use(
   (config) => {
-    // Log request
-    console.log('Request:', config.method.toUpperCase(), config.url, config.data);
+    // Chỉ log request quan trọng
+    if (config.url !== '/api/orders' || config.method !== 'get') {
+      console.log(`[API Request] ${config.method?.toUpperCase()} ${config.url}`);
+    }
     
     // Tự động điều chỉnh Content-Type cho FormData
     if (config.data instanceof FormData) {
       config.headers['Content-Type'] = 'multipart/form-data';
-      console.log('Detected FormData, setting Content-Type to multipart/form-data');
     }
     
     const token = localStorage.getItem('token');
     if (token) {
       config.headers.Authorization = `Bearer ${token}`;
     }
-    console.log(`[API Request] ${config.method?.toUpperCase()} ${config.baseURL}${config.url}`);
     return config;
   },
   (error) => {
@@ -42,20 +42,10 @@ instance.interceptors.request.use(
 // Add a response interceptor
 instance.interceptors.response.use(
   (response) => {
-    // Log response
-    console.log('Response:', response.status, response.data);
-    
-    // Kiểm tra dữ liệu trả về
-    if (Array.isArray(response.data)) {
-      console.log('Response data is array with length:', response.data.length);
-    } else if (response.data && typeof response.data === 'object') {
-      console.log('Response data is object with keys:', Object.keys(response.data));
-    } else {
-      console.log('Response data type:', typeof response.data);
+    // Chỉ log response quan trọng
+    if (response.config.url !== '/api/orders' || response.config.method !== 'get') {
+      console.log(`[API Response] ${response.config.method?.toUpperCase()} ${response.config.url} - Status: ${response.status}`);
     }
-    
-    console.log(`[API Response] ${response.config.method?.toUpperCase()} ${response.config.url} - Status: ${response.status}`);
-    console.log('[API Response Data]', response.data);
     
     // Trả về dữ liệu thực tế
     return response.data;
@@ -72,7 +62,7 @@ instance.interceptors.response.use(
       }
       return Promise.reject(error.response.data);
     }
-    return Promise.reject(error);
+    return Promise.reject(error.message || 'Network error');
   }
 );
 

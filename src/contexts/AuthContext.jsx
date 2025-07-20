@@ -14,9 +14,9 @@ export const AuthProvider = ({ children }) => {
     if (token) {
       console.log('Found token, fetching user data');
       axios.get('/api/auth/me')
-        .then(data => {
-          console.log('User data:', data);
-          setUser(data);
+        .then(response => {
+          console.log('User data:', response);
+          setUser(response);
         })
         .catch((error) => {
           console.error('Error fetching user data:', error);
@@ -46,7 +46,15 @@ export const AuthProvider = ({ children }) => {
       }
     } catch (error) {
       console.error('Login error:', error);
-      throw error?.response?.data || error;
+      if (typeof error === 'string') {
+        throw new Error(error);
+      } else if (error?.message) {
+        throw new Error(error.message);
+      } else if (error?.error) {
+        throw new Error(error.error);
+      } else {
+        throw new Error('Đăng nhập thất bại');
+      }
     }
   };
 
@@ -55,11 +63,16 @@ export const AuthProvider = ({ children }) => {
     setUser(null);
   };
 
+  const updateUser = (userData) => {
+    setUser(userData);
+  };
+
   const value = {
     user,
     loading,
     login,
     logout,
+    updateUser,
     isAdmin: user?.role === 'admin',
   };
 

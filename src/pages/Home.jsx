@@ -75,6 +75,16 @@ export default function HomeWithBanner() {
                 Xem dịch vụ
               </Button>
               <Button
+                variant="contained"
+                color="primary"
+                size="large"
+                component={Link}
+                to="/booking"
+                sx={{ mr: 2 }}
+              >
+                Đặt lịch sửa chữa
+              </Button>
+              <Button
                 variant="outlined"
                 color="inherit"
                 size="large"

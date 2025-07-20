@@ -49,7 +49,66 @@ button:hover {
 }
 button:focus,
 button:focus-visible {
-  outline: 4px auto -webkit-focus-ring-color;
+  outline: none;
+}
+
+/* Loại bỏ tất cả focus outline trong toàn bộ ứng dụng */
+*:focus,
+*:focus-visible,
+*.Mui-focusVisible {
+  outline: none !important;
+}
+
+/* Loại bỏ focus outline cho Material-UI components */
+.MuiButton-root:focus,
+.MuiButton-root:focus-visible,
+.MuiButton-root.Mui-focusVisible,
+.MuiIconButton-root:focus,
+.MuiIconButton-root:focus-visible,
+.MuiIconButton-root.Mui-focusVisible,
+.MuiFab-root:focus,
+.MuiFab-root:focus-visible,
+.MuiFab-root.Mui-focusVisible,
+.MuiBottomNavigationAction-root:focus,
+.MuiBottomNavigationAction-root:focus-visible,
+.MuiBottomNavigationAction-root.Mui-focusVisible,
+.MuiTab-root:focus,
+.MuiTab-root:focus-visible,
+.MuiTab-root.Mui-focusVisible,
+.MuiListItem-root:focus,
+.MuiListItem-root:focus-visible,
+.MuiListItem-root.Mui-focusVisible,
+.MuiTextField-root:focus,
+.MuiTextField-root:focus-visible,
+.MuiTextField-root.Mui-focusVisible,
+.MuiSelect-root:focus,
+.MuiSelect-root:focus-visible,
+.MuiSelect-root.Mui-focusVisible,
+.MuiSwitch-root:focus,
+.MuiSwitch-root:focus-visible,
+.MuiSwitch-root.Mui-focusVisible,
+.MuiCheckbox-root:focus,
+.MuiCheckbox-root:focus-visible,
+.MuiCheckbox-root.Mui-focusVisible,
+.MuiRadio-root:focus,
+.MuiRadio-root:focus-visible,
+.MuiRadio-root.Mui-focusVisible,
+.MuiChip-root:focus,
+.MuiChip-root:focus-visible,
+.MuiChip-root.Mui-focusVisible,
+.MuiCard-root:focus,
+.MuiCard-root:focus-visible,
+.MuiCard-root.Mui-focusVisible,
+.MuiPaper-root:focus,
+.MuiPaper-root:focus-visible,
+.MuiPaper-root.Mui-focusVisible,
+.MuiDialog-root:focus,
+.MuiDialog-root:focus-visible,
+.MuiDialog-root.Mui-focusVisible,
+.MuiDrawer-root:focus,
+.MuiDrawer-root:focus-visible,
+.MuiDrawer-root.Mui-focusVisible {
+  outline: none !important;
 }
 
 @media (prefers-color-scheme: light) {

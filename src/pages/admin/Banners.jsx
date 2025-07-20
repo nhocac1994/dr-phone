@@ -25,6 +25,7 @@ import {
 } from '@mui/icons-material';
 import { useSnackbar } from 'notistack';
 import axios from '../../config/axios';
+import PageTransition from '../../components/PageTransition';
 
 // Định nghĩa các loại banner
 const bannerTypes = [
@@ -394,13 +395,11 @@ export default function Banners() {
   }, [isMobile, renderBannerList, renderBannerUploadSection, selectedCategory]);
 
   return (
-    <Container 
-      maxWidth="lg" 
-      sx={{ 
-        p: isMobile ? 0 : 2,
-        overflow: 'hidden'
-      }}
-    >
+    <PageTransition>
+      <Box sx={{ 
+        p: { xs: 2, md: 3 },
+        width: '100%'
+      }}>
       <Box sx={{ 
         display: 'flex', 
         justifyContent: 'space-between', 
@@ -497,6 +496,7 @@ export default function Banners() {
           </Paper>
         </>
       )}
-    </Container>
+      </Box>
+    </PageTransition>
   );
 } 

@@ -1,264 +1,489 @@
-import React, { useEffect, useState, useCallback } from 'react';
-import {
-  Box, Tabs, Tab, Paper, Typography, Button, Stack, TextField, CircularProgress, Snackbar, Alert, Container, IconButton, Grid, Avatar
-} from '@mui/material';
+import { useState, useEffect, useRef } from 'react';
+import { Box, Button, Container, Grid, Paper, Tab, Tabs, Typography, Alert, TextField } from '@mui/material';
+import { useTheme } from '@mui/material/styles';
+import axios from '../../config/axios';
 import ReactQuill from 'react-quill';
 import 'react-quill/dist/quill.snow.css';
-import axios from '../../config/axios';
-import { useTheme } from '@mui/material/styles';
-import useMediaQuery from '@mui/material/useMediaQuery';
-import EditIcon from '@mui/icons-material/Edit';
-import AddPhotoAlternateIcon from '@mui/icons-material/AddPhotoAlternate';
-import DeleteIcon from '@mui/icons-material/Delete';
+import { AnimatePresence, motion } from 'framer-motion';
+import TabTransition from '../../components/TabTransition';
+import BrowserNotificationManager from '../../components/BrowserNotificationManager';
 
-const PAGE_SLUGS = [
-  { slug: 'company', label: 'Thông tin doanh nghiệp' },
-  { slug: 'payment', label: 'Hình thức thanh toán' },
-  { slug: 'warranty', label: 'Chính sách bảo hành' },
-  { slug: 'privacy', label: 'Chính sách bảo mật' },
-  { slug: 'return', label: 'Chính sách đổi trả' },
-  { slug: 'recruitment', label: 'Tuyển dụng' },
-  { slug: 'about', label: 'Giới thiệu' },
-  { slug: 'news', label: 'Tin tức' },
-  { slug: 'partners', label: 'Đối tác thương hiệu' },
-  { slug: 'owner', label: 'Thông tin chủ sở hữu Website' },
-  { slug: 'license', label: 'Giấy phép ủy quyền' }
-];
+const SiteSettings = () => {
+  const theme = useTheme();
+  const quillRef = useRef(null);
+  const [currentTab, setCurrentTab] = useState(0);
+  const [editingSlug, setEditingSlug] = useState(null); // Track which page is being edited
+  const [formData, setFormData] = useState({
+    businessName: '',
+    address: '',
+    phone: '',
+    email: '',
+    description: '',
+    openingHours: ''
+  });
+  const [staticPages, setStaticPages] = useState({
+    about: { title: 'Giới thiệu', content: '' },
+    contact: { title: 'Liên hệ', content: '' },
+    payment: { title: 'Hình thức thanh toán', content: '' },
+    warranty: { title: 'Chính sách bảo hành', content: '' },
+    shipping: { title: 'Chính sách vận chuyển', content: '' },
+    privacy: { title: 'Chính sách bảo mật', content: '' },
+    terms: { title: 'Điều khoản dịch vụ', content: '' },
+    partners: { title: 'Đối tác', content: '' },
+    owner: { title: 'Thông tin chủ sở hữu', content: '' },
+    license: { title: 'Giấy phép kinh doanh', content: '' }
+  });
+  const [alert, setAlert] = useState({ show: false, severity: 'success', message: '' });
+  const [loading, setLoading] = useState(false);
 
-const QUILL_MODULES = {
-  toolbar: {
-    container: [
-      [{ 'header': [1, 2, false] }],
+  // Cấu hình cho React-Quill
+  const quillModules = {
+    toolbar: [
+      [{ 'header': [1, 2, 3, 4, 5, 6, false] }],
       ['bold', 'italic', 'underline', 'strike'],
+      [{ 'color': [] }, { 'background': [] }],
+      [{ 'align': [] }],
       [{ 'list': 'ordered'}, { 'list': 'bullet' }],
       ['link', 'image'],
       ['clean']
-    ]
-  }
-};
+    ],
+  };
 
-export default function SiteSettings() {
-  const [tab, setTab] = useState(0);
-  const [form, setForm] = useState({
-    company_name: '', phone: '', phone_feedback: '', address: '', email: '',
-    facebook: '', youtube: '', zalo: '', tiktok: '', messenger: '', instagram: '',
-    certificates: []
-  });
-  const [pages, setPages] = useState({});
-  const [loading, setLoading] = useState(true);
-  const [saving, setSaving] = useState(false);
-  const [snackbar, setSnackbar] = useState({ open: false, message: '', severity: 'success' });
-  const theme = useTheme();
-  const isMobile = useMediaQuery(theme.breakpoints.down('sm'));
+  const quillFormats = [
+    'header',
+    'bold', 'italic', 'underline', 'strike',
+    'color', 'background',
+    'align',
+    'list', 'bullet',
+    'link', 'image'
+  ];
 
-  // Load dữ liệu
-  useEffect(() => {
-    Promise.all([
-      axios.get('/api/settings'),
-      ...PAGE_SLUGS.slice(1).map(p => axios.get(`/api/static-pages/${p.slug}`).catch(() => ({ data: { content: '' } })))
-    ]).then(([settingsRes, ...pagesRes]) => {
-      setForm(settingsRes.data || {});
-      const obj = {};
-      pagesRes.forEach((res, idx) => {
-        obj[PAGE_SLUGS[idx + 1].slug] = res.data.content || '';
-      });
-      setPages(obj);
-      setLoading(false);
-    });
-  }, []);
-
-  const handleChangeTab = (_, newTab) => setTab(newTab);
-
-  // Thông tin doanh nghiệp
-  const handleChangeForm = e => setForm(f => ({ ...f, [e.target.name]: e.target.value }));
-
-  // Upload nhiều ảnh chứng chỉ
-  const handleUploadCertificates = async (e) => {
-    const files = Array.from(e.target.files);
-    if (!files.length) return;
-    const uploaded = [];
-    for (let file of files) {
+  // Xử lý upload ảnh trong Quill
+  const handleImageUpload = async (file) => {
+    try {
       const formData = new FormData();
       formData.append('image', file);
-      const res = await axios.post('/api/upload', formData, {
-        headers: { 'Content-Type': 'multipart/form-data' }
+      
+      const response = await axios.post('/api/upload', formData, {
+        headers: {
+          'Content-Type': 'multipart/form-data'
+        }
       });
-      uploaded.push(res.data.filename);
+      
+      return response.data.url; // URL của ảnh đã upload
+    } catch (error) {
+      console.error('Error uploading image:', error);
+      showAlert('error', 'Không thể tải lên hình ảnh');
+      return null;
     }
-    setForm(f => ({ ...f, certificates: [...(f.certificates || []), ...uploaded] }));
   };
-  const handleRemoveCertificate = (img) => {
-    setForm(f => ({ ...f, certificates: (f.certificates || []).filter(i => i !== img) }));
+
+  useEffect(() => {
+    loadSettings();
+    loadStaticPages();
+  }, []);
+
+  const loadSettings = async () => {
+    try {
+      const response = await axios.get('/api/settings');
+      if (response?.data?.success) {
+        console.log('Loaded settings:', response.data.data);
+        setFormData({
+          businessName: response.data.data.company_name || '',
+          address: response.data.data.address || '',
+          phone: response.data.data.phone || '',
+          email: response.data.data.email || '',
+          description: response.data.data.description || '',
+          openingHours: response.data.data.opening_hours || ''
+        });
+      }
+    } catch (error) {
+      console.error('Error loading settings:', error);
+      showAlert('error', 'Không thể tải thông tin cài đặt');
+    }
+  };
+
+  const loadStaticPages = async () => {
+    try {
+      const pages = { ...staticPages };
+      for (const slug in pages) {
+        try {
+          const response = await axios.get(`/api/static-pages/${slug}`);
+          console.log(`Loaded ${slug} page:`, response.data);
+          if (response?.data) { // Remove .success check since GET doesn't have it
+            pages[slug] = {
+              ...pages[slug],
+              content: response.data.content || '',
+              title: response.data.title || pages[slug].title
+            };
+          }
+        } catch (error) {
+          console.error(`Error loading ${slug} page:`, error);
+          // Không set alert ở đây để tránh nhiều thông báo lỗi
+        }
+      }
+      setStaticPages(pages);
+    } catch (error) {
+      console.error('Error in loadStaticPages:', error);
+      showAlert('error', 'Không thể tải nội dung trang tĩnh');
+    }
   };
 
   const handleSaveForm = async () => {
-    setSaving(true);
+    setLoading(true);
     try {
-      await axios.put('/api/settings', form);
-      setSnackbar({ open: true, message: 'Đã lưu thông tin doanh nghiệp!', severity: 'success' });
-    } catch {
-      setSnackbar({ open: true, message: 'Lỗi khi lưu!', severity: 'error' });
-    }
-    setSaving(false);
-  };
-
-  // Trang tĩnh
-  const handleChangeContent = useCallback((value) => {
-    setPages(p => ({ ...p, [PAGE_SLUGS[tab].slug]: value }));
-  }, [tab]);
-
-  const handleSavePage = async () => {
-    setSaving(true);
-    try {
-      const content = pages[PAGE_SLUGS[tab].slug];
-      if (content && content.length > 1000000) {
-        setSnackbar({ 
-          open: true, 
-          message: 'Nội dung quá lớn! Vui lòng giảm kích thước hình ảnh hoặc chia nhỏ nội dung.', 
-          severity: 'error' 
-        });
-        setSaving(false);
-        return;
-      }
-      // Nếu trang chưa tồn tại, tạo mới
-      try {
-        await axios.post('/api/static-pages', {
-          slug: PAGE_SLUGS[tab].slug,
-          title: PAGE_SLUGS[tab].label,
-          content
-        });
-        setSnackbar({ open: true, message: 'Đã lưu nội dung!', severity: 'success' });
-      } catch (createError) {
-        // Nếu trang đã tồn tại, cập nhật
-        await axios.put(`/api/static-pages/${PAGE_SLUGS[tab].slug}`, { content });
-        setSnackbar({ open: true, message: 'Đã cập nhật nội dung!', severity: 'success' });
+      const settingsData = {
+        company_name: formData.businessName,
+        address: formData.address,
+        phone: formData.phone,
+        email: formData.email,
+        description: formData.description,
+        opening_hours: formData.openingHours
+      };
+      
+      const response = await axios.put('/api/settings', settingsData);
+      console.log('Save settings response:', response);
+      
+      if (response?.data?.success) {
+        showAlert('success', 'Đã lưu thông tin cài đặt');
+        loadSettings(); // Reload data after successful save
+      } else {
+        throw new Error('Unexpected response format');
       }
     } catch (error) {
-      setSnackbar({ 
-        open: true, 
-        message: error.response?.status === 413 
-          ? 'Nội dung quá lớn! Vui lòng giảm kích thước hình ảnh.' 
-          : 'Lỗi khi lưu!', 
-        severity: 'error' 
-      });
+      console.error('Error saving settings:', error);
+      showAlert('error', 'Không thể lưu thông tin cài đặt');
+    } finally {
+      setLoading(false);
     }
-    setSaving(false);
   };
 
-  if (loading) return (
-    <Box sx={{ position: 'relative', minHeight: '60vh' }}>
-      <Box sx={{
-        position: 'absolute', zIndex: 2000, top: 0, left: 0, width: '100%', height: '100%',
-        bgcolor: 'rgba(255,255,255,0.7)', display: 'flex', alignItems: 'center', justifyContent: 'center'
-      }}>
-        <CircularProgress />
-      </Box>
+  const handleEditPage = (slug) => {
+    setEditingSlug(slug);
+  };
+
+  const handleCancelEdit = () => {
+    setEditingSlug(null);
+  };
+
+  const handleSavePage = async (slug) => {
+    setLoading(true);
+    try {
+      const pageData = {
+        slug,
+        title: staticPages[slug].title,
+        content: staticPages[slug].content
+      };
+      
+      const response = await axios.put(`/api/static-pages/${slug}`, pageData);
+      console.log(`Save ${slug} page response:`, response.data);
+      
+      if (response?.data?.success) {
+        showAlert('success', 'Đã lưu nội dung trang');
+        // Update local state with returned data
+        setStaticPages(prev => ({
+          ...prev,
+          [slug]: {
+            ...prev[slug],
+            ...response.data.data // Spread response data
+          }
+        }));
+        setEditingSlug(null); // Exit edit mode after successful save
+      } else {
+        throw new Error('Unexpected response format');
+      }
+    } catch (error) {
+      console.error(`Error saving ${slug} page:`, error);
+      showAlert('error', 'Không thể lưu nội dung trang');
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  const handleInputChange = (field, value) => {
+    setFormData(prev => ({ ...prev, [field]: value }));
+  };
+
+  const handlePageContentChange = (slug, content) => {
+    setStaticPages(prev => ({
+      ...prev,
+      [slug]: { ...prev[slug], content }
+    }));
+  };
+
+  const showAlert = (severity, message) => {
+    setAlert({ show: true, severity, message });
+    setTimeout(() => setAlert({ show: false, severity: '', message: '' }), 3000);
+  };
+
+  const renderBusinessForm = () => (
+    <Box component={Paper} sx={{ p: { xs: 1, md: 3 },borderRadius: 3 }}>
+      <Typography variant="h6" gutterBottom>
+        Thông tin doanh nghiệp
+      </Typography>
+      <Grid container spacing={{ xs: 2, md: 3 }}>
+        <Grid item xs={12}>
+          <TextField
+            fullWidth
+            label="Tên doanh nghiệp"
+            value={formData.businessName}
+            onChange={(e) => handleInputChange('businessName', e.target.value)}
+            size="small"
+          />
+        </Grid>
+        <Grid item xs={12}>
+          <TextField
+            fullWidth
+            label="Địa chỉ"
+            value={formData.address}
+            onChange={(e) => handleInputChange('address', e.target.value)}
+            size="small"
+          />
+        </Grid>
+        <Grid item xs={12} md={6}>
+          <TextField
+            fullWidth
+            label="Số điện thoại"
+            value={formData.phone}
+            onChange={(e) => handleInputChange('phone', e.target.value)}
+            size="small"
+          />
+        </Grid>
+        <Grid item xs={12} md={6}>
+          <TextField
+            fullWidth
+            label="Email"
+            value={formData.email}
+            onChange={(e) => handleInputChange('email', e.target.value)}
+            size="small"
+          />
+        </Grid>
+        <Grid item xs={12}>
+          <TextField
+            fullWidth
+            multiline
+            rows={{ xs: 3, md: 4 }}
+            label="Mô tả"
+            value={formData.description}
+            onChange={(e) => handleInputChange('description', e.target.value)}
+            size="small"
+          />
+        </Grid>
+        <Grid item xs={12}>
+          <TextField
+            fullWidth
+            label="Giờ mở cửa"
+            value={formData.openingHours}
+            onChange={(e) => handleInputChange('openingHours', e.target.value)}
+            size="small"
+          />
+        </Grid>
+      </Grid>
+      <Button
+        variant="contained"
+        color="primary"
+        onClick={handleSaveForm}
+        disabled={loading}
+        sx={{ mt: { xs: 2, md: 3 } }}
+        fullWidth={{ xs: true, sm: false }}
+      >
+        Lưu thông tin
+      </Button>
     </Box>
   );
 
-  return (
-    <Box sx={{ width: '100%', minHeight: '100vh', bgcolor: '#f5f5f5', p: { xs: 0, md: 2 } }}>
-      <Container maxWidth="md" sx={{ py: { xs: 1, md: 3 } }}>
-        <Paper sx={{ p: { xs: 1.5, md: 3 }, borderRadius: 3, boxShadow: '0 4px 16px 0 rgba(0,0,0,0.10), 0 1.5px 4px 0 rgba(0,0,0,0.08)' }}>
-          <Tabs
-            value={tab}
-            onChange={handleChangeTab}
-            variant="scrollable"
-            scrollButtons="auto"
-            sx={{ borderBottom: '1px solid #eee', mb: 2 }}
-          >
-            {PAGE_SLUGS.map(p => <Tab key={p.slug} label={p.label} />)}
-          </Tabs>
-          <Box mt={2}>
-            {tab === 0 ? (
-              <Stack spacing={2}>
-                <Typography variant="h6" fontWeight={700} color="primary.main">Thông tin doanh nghiệp</Typography>
-                <TextField label="Tên doanh nghiệp" name="company_name" value={form.company_name || ''} onChange={handleChangeForm} fullWidth size="small" />
-                <TextField label="Số điện thoại tổng đài" name="phone" value={form.phone || ''} onChange={handleChangeForm} fullWidth size="small" />
-                <TextField label="Số điện thoại phản ánh" name="phone_feedback" value={form.phone_feedback || ''} onChange={handleChangeForm} fullWidth size="small" />
-                <TextField label="Địa chỉ" name="address" value={form.address || ''} onChange={handleChangeForm} fullWidth size="small" />
-                <TextField label="Email" name="email" value={form.email || ''} onChange={handleChangeForm} fullWidth size="small" />
-                <Grid container spacing={2}>
-                  <Grid item xs={12} sm={6} md={4}><TextField label="Facebook" name="facebook" value={form.facebook || ''} onChange={handleChangeForm} fullWidth size="small" /></Grid>
-                  <Grid item xs={12} sm={6} md={4}><TextField label="Youtube" name="youtube" value={form.youtube || ''} onChange={handleChangeForm} fullWidth size="small" /></Grid>
-                  <Grid item xs={12} sm={6} md={4}><TextField label="Zalo" name="zalo" value={form.zalo || ''} onChange={handleChangeForm} fullWidth size="small" /></Grid>
-                  <Grid item xs={12} sm={6} md={4}><TextField label="TikTok" name="tiktok" value={form.tiktok || ''} onChange={handleChangeForm} fullWidth size="small" /></Grid>
-                  <Grid item xs={12} sm={6} md={4}><TextField label="Messenger" name="messenger" value={form.messenger || ''} onChange={handleChangeForm} fullWidth size="small" /></Grid>
-                  <Grid item xs={12} sm={6} md={4}><TextField label="Instagram" name="instagram" value={form.instagram || ''} onChange={handleChangeForm} fullWidth size="small" /></Grid>
-                </Grid>
-                <Box>
-                  <Typography fontWeight={600} mb={1}>Ảnh chứng chỉ/giấy phép (có thể chọn nhiều)</Typography>
-                  <Button
-                    variant="outlined"
-                    component="label"
-                    startIcon={<AddPhotoAlternateIcon />}
-                    sx={{ mb: 1 }}
-                  >
-                    Tải lên ảnh
-                    <input
-                      type="file"
-                      accept="image/*"
-                      multiple
-                      hidden
-                      onChange={handleUploadCertificates}
-                    />
-                  </Button>
-                  <Stack direction="row" spacing={2} flexWrap="wrap">
-                    {(form.certificates || []).map((img, idx) => (
-                      <Box key={idx} sx={{ position: 'relative', display: 'inline-block' }}>
-                        <Avatar
-                          src={img.startsWith('http') ? img : `/img/${img}`}
-                          alt={`certificate-${idx}`}
-                          variant="rounded"
-                          sx={{ width: 80, height: 80, border: '1px solid #eee', mr: 1 }}
-                        />
-                        <IconButton
-                          size="small"
-                          color="error"
-                          sx={{ position: 'absolute', top: 0, right: 0, bgcolor: 'white' }}
-                          onClick={() => handleRemoveCertificate(img)}
-                        >
-                          <DeleteIcon fontSize="small" />
-                        </IconButton>
-                      </Box>
-                    ))}
-                  </Stack>
-                </Box>
-                <Button
-                  variant="contained"
-                  onClick={handleSaveForm}
-                  disabled={saving}
-                  sx={{ alignSelf: 'flex-end', minWidth: 120 }}
-                >
-                  {saving ? 'Đang lưu...' : 'Lưu thông tin'}
-                </Button>
-              </Stack>
+  const renderStaticPageEditor = (slug) => {
+    const page = staticPages[slug];
+    const isEditing = editingSlug === slug;
+
+    return (
+      <Box component={Paper} sx={{ p: { xs: 1, md: 3 },borderRadius: 3}}>
+        <Box sx={{ 
+          display: 'flex', 
+          flexDirection: { xs: 'column', sm: 'row' },
+          justifyContent: 'space-between', 
+          alignItems: { xs: 'stretch', sm: 'center' }, 
+          mb: 2,
+          gap: { xs: 1, sm: 0 }
+        }}>
+          <Typography variant="h6">
+            {page.title}
+          </Typography>
+          {!isEditing ? (
+            <Button
+              variant="outlined"
+              color="primary"
+              onClick={() => handleEditPage(slug)}
+              size="small"
+              fullWidth={{ xs: true, sm: false }}
+            >
+              Chỉnh sửa
+            </Button>
+          ) : (
+            <Box sx={{ 
+              display: 'flex', 
+              gap: 1,
+              width: { xs: '100%', sm: 'auto' }
+            }}>
+              <Button
+                variant="outlined"
+                color="secondary"
+                onClick={handleCancelEdit}
+                disabled={loading}
+                size="small"
+                fullWidth={{ xs: true, sm: false }}
+              >
+                Hủy
+              </Button>
+              <Button
+                variant="contained"
+                color="primary"
+                onClick={() => handleSavePage(slug)}
+                disabled={loading}
+                size="small"
+                fullWidth={{ xs: true, sm: false }}
+              >
+                Lưu
+              </Button>
+            </Box>
+          )}
+        </Box>
+
+        <AnimatePresence mode="wait">
+          <TabTransition key={isEditing ? 'edit' : 'display'}>
+            {!isEditing ? (
+              // Display mode - show saved content
+              <Box 
+                sx={{
+                  p: { xs: 1, md: 2 },
+                  border: `1px solid ${theme.palette.divider}`,
+                  borderRadius: 1,
+                  bgcolor: 'background.default',
+                  minHeight: { xs: '150px', md: '200px' },
+                  fontSize: { xs: '0.875rem', md: '1rem' },
+                  // Tối ưu hiển thị hình ảnh trên mobile
+                  '& img': {
+                    maxWidth: '100%',
+                    height: 'auto',
+                    display: 'block',
+                    margin: '8px auto'
+                  },
+                  '& p': {
+                    margin: '8px 0'
+                  }
+                }}
+              >
+                {page.content ? (
+                  <div dangerouslySetInnerHTML={{ __html: page.content }} />
+                ) : (
+                  <Typography color="textSecondary" sx={{ fontStyle: 'italic' }}>
+                    Chưa có nội dung. Nhấn "Chỉnh sửa" để thêm nội dung.
+                  </Typography>
+                )}
+              </Box>
             ) : (
-              <Box>
-                <Typography variant="h6" fontWeight={700} color="primary.main" mb={2}>{PAGE_SLUGS[tab].label}</Typography>
+              // Edit mode - show editor
+              <Box sx={{ 
+                '.ql-container': { 
+                  minHeight: { xs: '250px', md: '300px' },
+                  fontSize: { xs: '0.875rem', md: '1rem' }
+                },
+                '.ql-toolbar': {
+                  fontSize: { xs: '0.75rem', md: '0.875rem' }
+                },
+                // Tối ưu hiển thị hình ảnh trong editor
+                '.ql-editor': {
+                  '& img': {
+                    maxWidth: '100%',
+                    height: 'auto',
+                    display: 'block',
+                    margin: '8px auto'
+                  },
+                  '& p': {
+                    margin: '8px 0'
+                  }
+                }
+              }}>
                 <ReactQuill
-                  theme="snow"
-                  value={pages[PAGE_SLUGS[tab].slug] || ''}
-                  onChange={handleChangeContent}
-                  modules={QUILL_MODULES}
-                  style={{ minHeight: 200, marginBottom: 16 }}
+                  ref={quillRef}
+                  value={page.content}
+                  onChange={(content) => handlePageContentChange(slug, content)}
+                  modules={quillModules}
+                  formats={quillFormats}
                 />
-                <Button
-                  variant="contained"
-                  onClick={handleSavePage}
-                  disabled={saving}
-                  sx={{ minWidth: 120 }}
-                >
-                  {saving ? 'Đang lưu...' : 'Lưu nội dung'}
-                </Button>
               </Box>
             )}
-          </Box>
-        </Paper>
-      </Container>
-      <Snackbar open={snackbar.open} autoHideDuration={3000} onClose={() => setSnackbar(s => ({ ...s, open: false }))}>
-        <Alert severity={snackbar.severity} sx={{ width: '100%' }}>{snackbar.message}</Alert>
-      </Snackbar>
+          </TabTransition>
+        </AnimatePresence>
+      </Box>
+    );
+  };
+
+  return (
+    <Box sx={{ 
+      mt: { xs: 2, md: 4 }, 
+      mb: { xs: 2, md: 4 },
+      px: { xs: 1, sm: 2, md: 3 },
+      width: '100%',
+      // CSS global cho hình ảnh responsive
+      '& img': {
+        maxWidth: '100%',
+        height: 'auto'
+      }
+    }}>
+      {alert.show && (
+        <Alert severity={alert.severity} sx={{ mb: 2 }}>
+          {alert.message}
+        </Alert>
+      )}
+      
+      <Tabs
+        value={currentTab}
+        onChange={(e, newValue) => setCurrentTab(newValue)}
+        variant="scrollable"
+        scrollButtons="auto"
+        sx={{ 
+          mb: { xs: 2, md: 3 },
+          '& .MuiTab-root': {
+            minHeight: { xs: 40, md: 48 },
+            textTransform: 'none',
+            fontSize: { xs: '0.75rem', sm: '0.875rem' },
+            fontWeight: 500,
+            color: 'text.secondary',
+            px: { xs: 1, sm: 2 },
+            minWidth: { xs: 'auto', sm: 'auto' },
+            '&.Mui-selected': {
+              color: 'primary.main'
+            },
+            '&:focus': {
+              outline: 'none'
+            },
+            '&.Mui-focusVisible': {
+              outline: 'none'
+            }
+          }
+        }}
+      >
+        <Tab label="Thông tin doanh nghiệp" />
+        <Tab label="Thông báo trình duyệt" />
+        {Object.keys(staticPages).map((slug, index) => (
+          <Tab key={slug} label={staticPages[slug].title} />
+        ))}
+      </Tabs>
+
+      <AnimatePresence mode="wait">
+        <TabTransition key={currentTab}>
+          {currentTab === 0 ? (
+            renderBusinessForm()
+          ) : currentTab === 1 ? (
+            <BrowserNotificationManager />
+          ) : (
+            renderStaticPageEditor(Object.keys(staticPages)[currentTab - 2])
+          )}
+        </TabTransition>
+      </AnimatePresence>
     </Box>
   );
-} 
+};
+
+export default SiteSettings; 

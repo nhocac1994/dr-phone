@@ -158,7 +158,7 @@ export default function ServiceForm({ service, onSubmit, loading, onCancel }) {
 
   const fetchCategories = async () => {
     try {
-      const response = await axios.get('/categories');
+      const response = await axios.get('/api/categories');
       setCategories(response || []);
     } catch (error) {
       console.error('Error fetching categories:', error);
@@ -168,7 +168,7 @@ export default function ServiceForm({ service, onSubmit, loading, onCancel }) {
 
   const fetchSubCategories = async (categoryId) => {
     try {
-      const response = await axios.get(`/categories/${categoryId}/sub-categories`);
+      const response = await axios.get(`/api/categories/${categoryId}/sub-categories`);
       setSubCategories(response || []);
     } catch (error) {
       console.error('Error fetching sub-categories:', error);

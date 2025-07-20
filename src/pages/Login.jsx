@@ -28,13 +28,13 @@ export default function Login() {
       const response = await login(username, password);
       console.log('Login response:', response);
       
-      // Kiểm tra role từ response
-      if (response?.user?.role === 'admin') {
-        console.log('Admin login successful, navigating to /admin');
+      // Cho phép cả admin và user đăng nhập
+      if (response?.user?.role === 'admin' || response?.user?.role === 'user') {
+        console.log('Login successful, navigating to /admin');
         navigate('/admin');
       } else {
-        console.log('Non-admin user:', response?.user);
-        setError('Bạn không có quyền truy cập trang quản trị');
+        console.log('Unknown user role:', response?.user?.role);
+        setError('Vai trò người dùng không hợp lệ');
       }
     } catch (err) {
       console.error('Login error:', err);
