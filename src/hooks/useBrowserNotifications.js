@@ -74,9 +74,15 @@ const useBrowserNotifications = () => {
       }
 
       // Tạo subscription mới
+      const vapidKey = import.meta.env.VITE_VAPID_PUBLIC_KEY;
+      if (!vapidKey) {
+        console.warn('VITE_VAPID_PUBLIC_KEY not found, skipping push subscription');
+        return null;
+      }
+      
       const newSubscription = await registration.pushManager.subscribe({
         userVisibleOnly: true,
-        applicationServerKey: urlBase64ToUint8Array(process.env.VITE_VAPID_PUBLIC_KEY || '')
+        applicationServerKey: urlBase64ToUint8Array(vapidKey)
       });
 
       setSubscription(newSubscription);

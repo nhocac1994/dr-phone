@@ -19,6 +19,7 @@ import NotificationBanner from './components/NotificationBanner';
 
 // Public Pages
 import Home from './pages/Home';
+import Services from './pages/Services';
 import Booking from './pages/Booking';
 
 // Auth Pages
@@ -26,7 +27,7 @@ import Login from './pages/Login';
 
 // Admin Pages
 import Dashboard from './pages/admin/Dashboard';
-import Services from './pages/admin/Services';
+import AdminServices from './pages/admin/Services';
 import ServiceForm from './pages/admin/ServiceForm';
 import ServiceDetail from './pages/admin/ServiceDetail';
 import Orders from './pages/admin/Orders';
@@ -44,7 +45,8 @@ const AnimatedRoutes = () => {
     <AnimatePresence mode="wait">
       <Routes location={location} key={location.pathname}>
         {/* Public Routes */}
-        <Route path="/" element={<Layout><Home /></Layout>} />
+        <Route path="/" element={<Home />} />
+        <Route path="/services" element={<Layout><Services /></Layout>} />
         <Route path="/login" element={<Login />} />
         <Route path="/booking" element={<Layout><Booking /></Layout>} />
 
@@ -52,7 +54,7 @@ const AnimatedRoutes = () => {
         <Route path="/admin" element={<ProtectedRoute><AdminLayout /></ProtectedRoute>}>
           <Route index element={<Navigate to="dashboard" replace />} />
           <Route path="dashboard" element={<Dashboard />} />
-          <Route path="services" element={<Services />} />
+          <Route path="services" element={<AdminServices />} />
           <Route path="services/new" element={<ServiceForm />} />
           <Route path="services/:id" element={<ServiceDetail />} />
           <Route path="services/edit/:id" element={<ServiceForm />} />

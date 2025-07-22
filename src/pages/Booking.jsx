@@ -22,7 +22,7 @@ import {
 } from '@mui/material';
 import { LoadingButton } from '@mui/lab';
 import { useSnackbar } from 'notistack';
-import { useNavigate } from 'react-router-dom';
+import { useNavigate, useSearchParams } from 'react-router-dom';
 import axios from '../config/axios';
 import PageTransition from '../components/PageTransition';
 
@@ -48,6 +48,10 @@ export default function Booking() {
     scheduled_time: '',
     notes: ''
   });
+  
+  // Lấy service từ URL params
+  const [searchParams] = useSearchParams();
+  const serviceIdFromUrl = searchParams.get('service');
   const { enqueueSnackbar } = useSnackbar();
   const navigate = useNavigate();
 
@@ -55,6 +59,17 @@ export default function Booking() {
     fetchCategories();
     fetchServices();
   }, []);
+
+  // Tự động chọn service nếu có trong URL
+  useEffect(() => {
+    if (serviceIdFromUrl && services.length > 0) {
+      const service = services.find(s => s.id == serviceIdFromUrl);
+      if (service) {
+        setSelectedService(service);
+        setSelectedCategory(service.category_id);
+      }
+    }
+  }, [serviceIdFromUrl, services]);
 
   const fetchCategories = async () => {
     try {
